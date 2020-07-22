@@ -222,7 +222,6 @@ public class VectorKeySeriesLongSerialized<T extends SerializeWrite>
   private void serialize(int pos, long value) throws IOException {
     serializeWrite.setAppend(output);
 
-    // UNDONE: Add support for DATE, TIMESTAMP, INTERVAL_YEAR_MONTH, INTERVAL_DAY_TIME...
     switch (primitiveCategory) {
     case BOOLEAN:
       serializeWrite.writeBoolean(value != 0);
