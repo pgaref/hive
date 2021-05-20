@@ -261,6 +261,15 @@ public class HashTableLoader implements org.apache.hadoop.hive.ql.exec.HashTable
 
         tableContainer.setSerde(keyCtx, valCtx);
         long startTime = System.currentTimeMillis();
+
+        /**
+         * TODO PANOS
+         * Seems like the right place for:
+         *  ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+         *  ...
+         *  drain...
+         *  Also key/value always seem to be treated like a ByteWritable underneath..
+         */
         while (kvReader.next()) {
           tableContainer.putRow((Writable) kvReader.getCurrentKey(), (Writable) kvReader.getCurrentValue());
           numEntries++;
