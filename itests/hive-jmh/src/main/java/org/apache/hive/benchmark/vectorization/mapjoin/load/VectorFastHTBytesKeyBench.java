@@ -31,7 +31,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 /*
  * Build with "mvn clean install -DskipTests -Pperf" at main itests directory.
  * From itests/hive-jmh directory, run:
- *     java -jar -Xmx8g -Xms8g target/benchmarks.jar org.apache.hive.benchmark.vectorization.mapjoin.load.VectorFastHTLongKeyBench
+ *     java -jar -Xmx8g -Xms8g target/benchmarks.jar org.apache.hive.benchmark.vectorization.mapjoin.load.VectorFastHTBytesKeyBench
  *
  *  {HASH_MAP, HASH_SET, HASH_MULTISET}
  *    X

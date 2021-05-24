@@ -78,7 +78,8 @@ public abstract class AbstractHTLoadBench {
 
 
   @Param({"0", "1", "2", "4", "8", "16", "32", "64"})
-  int LOAD_THREADS_NUM;
+//  @Param({"0", "1", "2", "4", "8"})
+  static int LOAD_THREADS_NUM;
 
   @Benchmark
   public void hashTableLoadBench() throws Exception {

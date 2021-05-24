@@ -23,8 +23,10 @@ import org.apache.hadoop.hive.serde2.binarysortable.fast.BinarySortableSerialize
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hive.common.util.HashCodeUtil;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Random;
 
 public class LongKeyBase extends AbstractHTLoadBench {
@@ -50,6 +52,7 @@ public class LongKeyBase extends AbstractHTLoadBench {
     this.customKeyValueReader = generateLongKVPairs(rowCount, seed);
   }
 
+  static long [] count = new long[LOAD_THREADS_NUM];
   private static CustomKeyValueReader generateLongKVPairs(int rows, long seed) throws IOException {
     System.out.println("Data GEN for: " + rows);
     Random random = new Random(seed);
@@ -63,7 +66,11 @@ public class LongKeyBase extends AbstractHTLoadBench {
     for (int i = 0; i < rows; i++) {
       outp = new ByteStream.Output();
       bsw.set(outp);
-      bsw.writeLong(random.nextInt(rows));
+      long k = random.nextInt(rows);
+      bsw.writeLong(k);
+      long hashCode = HashCodeUtil.calculateLongHashCode(k);
+      int partitionId = (int) ((LOAD_THREADS_NUM - 1) & hashCode);
+      count[partitionId]++;
       key = new BytesWritable(outp.getData(), outp.getLength());
       outp = new ByteStream.Output();
       bsw.reset();
@@ -72,6 +79,7 @@ public class LongKeyBase extends AbstractHTLoadBench {
       keys[i] = key;
       values[i] = value;
     }
+    System.out.println(Arrays.toString(count));
     LOG.info("Data GEN done after {} sec", (System.currentTimeMillis() - startTime) / 1_000);
     return new CustomKeyValueReader(keys, values);
   }

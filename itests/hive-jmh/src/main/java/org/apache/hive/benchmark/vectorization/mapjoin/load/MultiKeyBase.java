@@ -17,13 +17,16 @@ package org.apache.hive.benchmark.vectorization.mapjoin.load;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.ql.exec.vector.mapjoin.MapJoinTestConfig;
 import org.apache.hadoop.hive.ql.exec.vector.mapjoin.MapJoinTestDescription;
+import org.apache.hadoop.hive.ql.exec.vector.mapjoin.fast.VerifyFastRow;
 import org.apache.hadoop.hive.ql.plan.VectorMapJoinDesc;
 import org.apache.hadoop.hive.serde2.ByteStream;
 import org.apache.hadoop.hive.serde2.RandomTypeUtil;
 import org.apache.hadoop.hive.serde2.binarysortable.fast.BinarySortableSerializeWrite;
+import org.apache.hadoop.hive.serde2.io.TimestampWritableV2;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 import java.util.Random;
@@ -59,25 +62,25 @@ public class MultiKeyBase extends AbstractHTLoadBench {
     Random random = new Random(seed);
     BytesWritable[] keys = new BytesWritable[rows];
     BytesWritable[] values = new BytesWritable[rows];
-    BinarySortableSerializeWrite bsw = new BinarySortableSerializeWrite(1);
-    long startTime = System.currentTimeMillis();
-    ByteStream.Output outp;
-    BytesWritable key;
-    BytesWritable value;
-    int str_length = 8;
     for (int i = 0; i < rows; i++) {
-      outp = new ByteStream.Output(str_length);
-      bsw.set(outp);
-      bsw.writeTimestamp(RandomTypeUtil.getRandTimestamp(random));
-      key = new BytesWritable(outp.getData(), outp.getLength());
+      keys[i] = new BytesWritable();
+      values[i] = new BytesWritable();
+    }
+    BinarySortableSerializeWrite serializeWrite = new BinarySortableSerializeWrite(1);
+    ByteStream.Output output = new ByteStream.Output();
+    long startTime = System.currentTimeMillis();
 
-      bsw.reset();
-      for (int j = 0; j < str_length; j++) {
-        outp.writeByte(j, (byte) (random.nextInt(+'c' - 'a' + 1) + 'a'));
-      }
-      value = new BytesWritable(outp.getData(), outp.getLength());
-      keys[i] = key;
-      values[i] = value;
+    for (int i = 0; i < rows; i++) {
+      output.reset();
+      serializeWrite.set(output);
+      VerifyFastRow.serializeWrite(serializeWrite, TypeInfoFactory.timestampTypeInfo, new TimestampWritableV2(RandomTypeUtil.getRandTimestamp(random)));
+      keys[i].set(output.getData(), 0, output.getLength());
+
+      output.reset();
+      Text v = new Text(RandomTypeUtil.getRandString(random, null, 20*2));
+      serializeWrite.set(output);
+      VerifyFastRow.serializeWrite(serializeWrite, TypeInfoFactory.stringTypeInfo, v);
+      values[i].set(output.getData(), 0, output.getLength());
     }
     LOG.info("Data GEN done after {} sec", (System.currentTimeMillis() - startTime) / 1_000);
     return new CustomKeyValueReader(keys, values);

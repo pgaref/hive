@@ -170,10 +170,11 @@ public class VectorMapJoinFastHashTableLoader implements org.apache.hadoop.hive.
           throw new HiveException(e);
         }
       }
-      this.batchPool.offer(batch);
       totalProcessedEntries += batch.getSize();
       LOG.debug("Draining thread {} added {} entries", partitionId, batch.getSize());
       totalEntries.accumulate(batch.getSize());
+      // Offer must be at the end as it is resetting the Index(size)
+      this.batchPool.offer(batch);
     }
 
     LOG.info("Terminating draining thread {} after processing Entries {}", partitionId, totalProcessedEntries);
@@ -272,7 +273,7 @@ public class VectorMapJoinFastHashTableLoader implements org.apache.hadoop.hive.
           BytesWritable currentKey = (BytesWritable) kvReader.getCurrentKey();
           BytesWritable currentValue = (BytesWritable) kvReader.getCurrentValue();
           long hashCode = tableContainer.getHashCode(currentKey);
-          int partitionId = (int) ((numLoadThreads - 1) & hashCode);
+          int partitionId = (int) ((numLoadThreads - 1) & hashCode); // numLoadThreads divisor must be a power of 2!
           // call getBytes as copy is called later
           HashTableElement h = new HashTableElement(hashCode, currentValue.copyBytes(), currentKey.copyBytes());
           if (elementBatches[partitionId].addElement(h)) {
